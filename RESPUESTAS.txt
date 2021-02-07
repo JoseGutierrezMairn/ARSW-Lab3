@@ -1,0 +1,7 @@
+Un elemento molesto para la simulación es que en cierto punto de la misma hay pocos 'inmortales' vivos realizando peleas fallidas con 'inmortales' ya muertos. Es necesario ir suprimiendo los inmortales muertos de la simulación a medida que van muriendo. Para esto:
+	* Analizando el esquema de funcionamiento de la simulación, esto podría crear una condición de carrera? Implemente la funcionalidad, ejecute la simulación y observe qué problema se presenta cuando hay muchos 'inmortales' en la misma. Escriba sus conclusiones al respecto en el archivo RESPUESTAS.txt.
+
+Conclusiones: La implementación para la solución del problema se encuentra en el archivo README.md, el problema con esta implementación es que los hilos van a entrar ordenadamente por la sincronización en bloque puesta en el método donde se va a verificar si el inmortal tiene suficiente vida para seguir  
+combatiendo o no, de no ser así se elimina el inmortal de la lista  y se detiene el hilo, la condición de carrera es clara, cada vez que un hilo quiera consultar la lista que contiene a la población de inmortales (immortalsPopulation) va a tener que verrificar si hay otro hilo haciendo uso de la lista  
+y esperar a que la desocupe (De ser así), esto en casos grandes lo que hace es que la ejecución se vuelva muy lenta, pues serían muchos hilos los que tratan de hacer uso de la lista que contiene a la población de inmortales, lo que haría una cola muy larga
+y por lo tanto una ejecución muy lenta del programa.
