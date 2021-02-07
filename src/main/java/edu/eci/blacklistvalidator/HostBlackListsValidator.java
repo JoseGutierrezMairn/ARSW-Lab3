@@ -19,6 +19,11 @@ import edu.eci.spamkeywordsdatasource.HostBlacklistsDataSourceFacade;
 public class HostBlackListsValidator {
 
     private static final int BLACK_LIST_ALARM_COUNT=5;
+    private int ocurrencesCount;
+    private int checkedListsCount;
+    private LinkedList<Integer> blackListOcurrences;
+    
+    private boolean pare;
     
     /**
      * Check the given host's IP address in all the available black lists,
@@ -33,61 +38,56 @@ public class HostBlackListsValidator {
      */
     @SuppressWarnings("deprecation")
 	public List<Integer> checkHost(String ipaddress, int n) throws InterruptedException{
+        pare = false;
+        blackListOcurrences=new LinkedList<>();
         
-        LinkedList<Integer> blackListOcurrences=new LinkedList<>();
-        
-        int ocurrencesCount=0;
+        ocurrencesCount=0;
         
         HostBlacklistsDataSourceFacade skds=HostBlacklistsDataSourceFacade.getInstance();
         List<Seeker> seekers = new ArrayList<Seeker>();
-        List<Integer> alives = new ArrayList<Integer>();
-        int checkedListsCount=0;
-        int segment = (int) Math.ceil(skds.getRegisteredServersCount()/n);
+       // List<Integer> alives = new ArrayList<Integer>();
+        checkedListsCount=0;
+        int segment = (int) Math.ceil((skds.getRegisteredServersCount() - n + 1)/n);
         int b = 0;
         int e = b + segment;
+        Seeker s;
         for (int i = 0; i<n; i++) {
-        	Seeker s = new Seeker(skds, e, b, BLACK_LIST_ALARM_COUNT, ipaddress);
+        	s = new Seeker(skds, e, b, BLACK_LIST_ALARM_COUNT, ipaddress, this);
         	s.start();
         	seekers.add(s);
         	b = e + 1;
-        	e+=segment+1;
+        	e+=segment + 1;
         }
-        //for (Seeker s : seekers) {
-        //	s.join();
-        //}
-        int tAlives = n;
-        while(ocurrencesCount < BLACK_LIST_ALARM_COUNT && tAlives > 0) {
-        	for (Seeker s : seekers) {
-        		if(s.isAlive()) {
-        			if(s.getNewness()) {
-        				s.setNewness(false);
-        				checkedListsCount+= s.getCheckedListsCount();
-                    	ocurrencesCount+= s.getOccurrences();
-                    	System.out.println(s.getOccurrences());
-                    	System.out.println(s.getListOccurrences());
-                    	for (Integer inte :  s.getListOccurrences()) {
-                    		 blackListOcurrences.add(inte);
-                    	}
-        			}
-        			
-        		}else {
-        			tAlives-=1;
-        		}
-            	
+        for (Seeker se : seekers) {
+        	se.join();
+        }
+        
+        for(Seeker se : seekers) {
+        	checkedListsCount+= se.getCheckedListsCount();
+        	ocurrencesCount+= se.getOccurrences();
+            for (Integer inte :  se.getListOccurrences()) {
+            	 blackListOcurrences.add(inte);
             }
-        	if(ocurrencesCount >= BLACK_LIST_ALARM_COUNT) {
-        		for (Seeker s : seekers) {
-        			s.stop();
-        		}
-        		skds.reportAsNotTrustworthy(ipaddress);
-        	}
         }
         
-        
-        if (ocurrencesCount<BLACK_LIST_ALARM_COUNT){
+        /***
+	       while(ocurrencesCount < BLACK_LIST_ALARM_COUNT && tAlives > 0) {
+	    	   //ocurrencesCount = 0;
+	        	for (Seeker se : seekers) {
+	        		
+	        		if(! se.isAlive() && ! checked.contains(se)) {
+	        			checked.add(se);
+	        			tAlives-=1;
+	        		}
+	            }
+	        	
+       }
+	    ***/
+        if(ocurrencesCount >= BLACK_LIST_ALARM_COUNT) {
+	    	skds.reportAsNotTrustworthy(ipaddress);
+	    }else{
         	skds.reportAsTrustworthy(ipaddress);
-        }               
-        
+         }               
         LOG.log(Level.INFO, "Checked Black Lists:{0} of {1}", new Object[]{checkedListsCount, skds.getRegisteredServersCount()});
         return blackListOcurrences;
     }
@@ -95,6 +95,15 @@ public class HostBlackListsValidator {
     
     private static final Logger LOG = Logger.getLogger(HostBlackListsValidator.class.getName());
     
+    public int getLimit() {
+    	return BLACK_LIST_ALARM_COUNT;
+    }
     
+    public  void setPare(boolean pare) {
+    	this.pare = pare;
+    }
+    public boolean pare() {
+        return pare; 
+    }
     
 }

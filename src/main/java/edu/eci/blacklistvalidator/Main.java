@@ -21,7 +21,6 @@ public class Main {
         List<Integer> blackListOcurrences=hblv.checkHost("202.24.34.55",1);
         System.out.println("The host was found in the following blacklists:"+blackListOcurrences);
         long endTime = System.currentTimeMillis();
-        System.out.println(endTime - startTime);
     }
     
 }
